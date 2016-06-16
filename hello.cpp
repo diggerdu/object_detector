@@ -17,26 +17,15 @@ class DetectRes
 
 class Rect
 {
-	private:
-	vector<vector<Point> > _contour;
-	Point _center;
-	double _area;
-	double _angle;
-	
 	public:
-	Rect(vector<vector<Point> > c, Point p, double a, double theta)  : _contour(c), _center(p), _area(a), _angle(theta) {};
-	int compareTo(Rect other)
-	{	
-		if (_area > -other._area)
-			return 1;
-		if (_area == -other._area)
-			return 0;
-		if (_area < -other._area)
-			return -1;
-	};
-};
-
-
+	vector<Point> contour;
+	Point center;
+	double area;
+	double angle;
+	
+	Rect(vector<Point> c, Point p, double a, double theta) : contour(c), center(p), area(area), angle(theta) {}
+	
+}
 /* Return if absolute value of X is within the range of [MIN, MAX]. */
 bool in_range(double x, double min, double max)
 {
