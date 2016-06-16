@@ -6,6 +6,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 const int BLUR_BLOCK_SIZE = 5;
+const double EPSILON_RATE = 0.05;
 using namespace std;
 using namespace cv;
 
@@ -74,7 +75,8 @@ vector<vector<point2f> > linearApprox(vector<vector<point> > contour)
 {
 	vector<point2f> lineared;
 	contour.convertTo(lineared, CV_32FC2);
-	double epsilon = EPSILON_RATE * Imgproc.arcLength(lineared, true);
+	double epsilon = EPSILON_RATE * arcLength(lineared, true);
+	approxPloyDP(lineared, lineared, epsilon, true);
 	return lineared;
 }	
 
