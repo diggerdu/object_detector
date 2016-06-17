@@ -15,7 +15,7 @@ class DetectRes
 	
 };
 
-class Rect
+class MRect
 {
 	public:
 	vector<Point> contour;
@@ -23,12 +23,12 @@ class Rect
 	double area;
 	double angle;
 	
-	Rect(vector<Point> c, Point p, double a, double theta) : contour(c), center(p), area(area), angle(theta) {}
-	bool operator > (const Rect& other) const
+	MRect(vector<Point> c, Point p, double a, double theta) : contour(c), center(p), area(area), angle(theta) {}
+	bool operator > (const MRect& other) const
 	{
 		return area > other.area;
 	}	
-}
+};
 
 /* Return if absolute value of X is within the range of [MIN, MAX]. */
 bool in_range(double x, double min, double max)
@@ -44,8 +44,8 @@ Mat pretreat(Mat frame)
 	GaussianBlur(frame, treated, Size(BLUR_BLOCK_SIZE, BLUR_BLOCK_SIZE), 3);
 	///cautions
 	threshold(treated, treated, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
-	Mat kernel = getStructuringElement(MOPRPH_ELLIPSE, Size(3, 3));
-	morphologyEx(treated, treated, MOPRH_GRADIENT, kernel);	
+	Mat kernel = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
+	morphologyEx(treated, treated, MORPH_GRADIENT, kernel);	
 	return treated;		
 }
 
@@ -63,39 +63,37 @@ double distance(Point pt1, Point pt2)
 	return sqrt(sqrt(pt1.x - pt2.x) + sqrt(pt1.y - pt2.y));
 }
 
-vector<vector<point2f> > linearApprox(vector<vector<point> > contour)
+/** Rerun the appoximation of contour. */
+vector<Point2f> linearApprox(vector<Point> contour)
 {
-	vector<point2f> lineared;
-	contour.convertTo(lineared, CV_32FC2);
+	vector<Point2f> lineared;
+	for (int i = 0; i < contour.size(); i++)
+		lineared.push_back((Point2f)contour[i]);
 	double epsilon = EPSILON_RATE * arcLength(lineared, true);
-	approxPloyDP(lineared, lineared, epsilon, true);
+	approxPolyDP(lineared, lineared, epsilon, true);
 	return lineared;
 }	
 
+vector<MRect> findRects(Mat image)
+{	
+	vector<MRect> rectangles;
+	vector<vector<Point> > contours;
+	vector<Vec4i> hierarchy;
+	findContours(image, contours, hierarchy, RETR_CCOMP, CHAIN_APPROX_SIMPLE);
+	for (int i = 0; i < contours.size(); i++)
+	{
+		vector<Point> contour = contours[i];
+		double contour_area = contourArea(contour);
+		if (contour.size() < 4 || contour_area < 25)
+			continue;
+		vector<Point2f> lineared;
+		for (int i = 0; i < contour.size(); i++)
+			lineared.push_back((Point2f)contour[i]);
+		
+	}
+}
 int main(int argc, char** argv )
 {
-    if ( argc != 2 )
-    {
-        std::cout<<"usage: DisplayImage.out <Image_Path>\n";
-        return -1;
-    }
-
-    Mat image;
-    image = imread( argv[1], 1 );
-
-    if ( !image.data )
-    {
-        std::cout<<"No image data \n";
-        return -1;
-    }
-    //namedWindow("Display Image", WINDOW_AUTOSIZE );
-    //imshow("Display Image", image);
- 	Mat out;
-	out = pretreat(image); 
-	namedWindow("display", WINDOW_AUTOSIZE);
-	imshow("Display Image", out);
-    waitKey(0);
-
     return 0;
 }
 
