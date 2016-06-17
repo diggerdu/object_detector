@@ -1,22 +1,20 @@
 // just for ssh test
 #include <iostream>
 #include <cmath>
-#include <opencv2/core/core.hpp>
-#include <opencv2/opencv.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
+#include <stdlib.h>
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
 const int BLUR_BLOCK_SIZE = 3;
 const double EPSILON_RATE = 0.05;
-using namespace std;
 using namespace cv;
+using namespace std;
 
 class DetectRes
 {
-	private:
+	public:
 	vector<Point2f> _contour;
 	int _shape, _x, _y;
 	double _arclen, _scale;
-	public:
 	DetectRes(vector<Point2f> c, int s, double arc) : _shape(s), _contour(c), _arclen(arc) {}
 	void setCentroid(double x, double y)
 	{
@@ -25,16 +23,7 @@ class DetectRes
 	}
 	void setScale(double s) { _scale = s / _arclen;}
 	void setScale2(double s) { _scale = s;}
-	/*
-	int size() { return _shape;}
-	vector<Point2f> getContour{ return _contour;}
-	double scale() { return _scale;}
-	double center_x() { return _x;}
-	double center_y() { return _y;}
-	double arclen() { return -arclen;}
-	*/
-};	
-
+};
 class MRect
 {
 	public:
@@ -98,7 +87,7 @@ vector<Point2f> linearApprox(vector<Point> contour)
 vector<MRect> findRects(Mat image)
 {	
 	vector<MRect> rectangles;
-	vector<vector<Point> > contours;
+	vector<vector<Point> > contours,test;
 	vector<Vec4i> hierarchy;
 	findContours(image, contours, hierarchy, RETR_CCOMP, CHAIN_APPROX_SIMPLE);
 	for (int i = 0; i < contours.size(); i++)
@@ -120,45 +109,66 @@ vector<MRect> findRects(Mat image)
 			continue;
 		if (!MInRange(rect_area / contour_area, 0.9 , 1.1))		
 			continue;
+		test.push_back(contour);
 		MRect rect = MRect(contour, ro_rect.center, rect_area, ro_rect.angle);
 		rectangles.push_back(rect);
 	}
+	Mat result(image.size(), CV_8UC3, Scalar(0, 0, 0));
+	drawContours(result, contours, -1, Scalar(255, 255, 255));
+	imwrite("contour.png", result);
 	return rectangles;
 }
 
-DetectRes detectMarker(Mat frame)
+void detectMarker(Mat frame)
 {
 	Mat treated = pretreat(frame);
 	imwrite("ZTreated.png", treated);
 	vector<MRect> rectangles = findRects(treated);
-	sort(rectangles.begin(), rectangles.end());
 	for (int i = 0; i < rectangles.size(); i++)
-		for (int j = 0; j < rectangles.size(); j++)
+	{
+		cout<<rectangles[i].center<<endl;
+		cout<<rectangles[i].contour.size()<<endl;
+		cout<<rectangles[i].area<<endl;
+	}
+	/*
+	sort(rectangles.begin(), rectangles.end());
+	cout<<rectangles.size()<<endl;	
+	for (int i = 0; i < rectangles.size(); i++)
+		for (int j = i+1; j < rectangles.size(); j++)
 		{
 			MRect outer = rectangles[i];
 			MRect inner = rectangles[j];
 			Point diff = outer.center - inner.center;
 			double distance = sqrt(diff.x * diff.x + diff.y * diff.y);
+			cout<<outer.area<<' '<<inner.area<<endl;
 			if (!MInRange(distance, 0, 0.5) ||
 			    !MInRange(outer.angle - inner.angle, 0, 2.5) ||
 			    !MInRange(outer.area / inner.area, 1.5, 3))
+			{
+				cout<<"loop"<<endl;
 				continue;
-			
+			}
 			vector<Point2f> outer_approx = linearApprox(outer.contour);
 			vector<Point2f> inner_approx = linearApprox(inner.contour);
-
 			double outer_len = arcLength(outer.contour, true) / 4.0;
 			double inner_len = arcLength(inner.contour, true) / 4.0;
 			DetectRes res = DetectRes(outer_approx, 4, outer_len);
 			res.setCentroid(outer.center.x, outer.center.y);
 			res.setScale2((1.75 / outer_len) + (1.2 / inner_len));
-			return res;
-			break;
+			//return res;
+			cout<<"check"<<endl;
+			cout<<res._scale<<endl;
+			//break;
 		}
-
+	*/
 }
-int main(int argc, char** argv )
+int main()
 {
-    return 0;
+	Mat treated;
+	Mat original_img = imread("Sample.jpg");
+	treated = pretreat(original_img);
+	vector<MRect> test = findRects(treated);
+	//detectMarker(original_img);
+	
 }
 
