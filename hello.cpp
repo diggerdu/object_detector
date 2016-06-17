@@ -5,7 +5,7 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-const int BLUR_BLOCK_SIZE = 5;
+const int BLUR_BLOCK_SIZE = 3;
 const double EPSILON_RATE = 0.05;
 using namespace std;
 using namespace cv;
@@ -24,8 +24,12 @@ class Rect
 	double angle;
 	
 	Rect(vector<Point> c, Point p, double a, double theta) : contour(c), center(p), area(area), angle(theta) {}
-	
+	bool operator > (const Rect& other) const
+	{
+		return area > other.area;
+	}	
 }
+
 /* Return if absolute value of X is within the range of [MIN, MAX]. */
 bool in_range(double x, double min, double max)
 {
@@ -36,13 +40,12 @@ bool in_range(double x, double min, double max)
 Mat pretreat(Mat frame)
 {
 	Mat treated;
-	cvtColor(original, treated, CV_BGR2GRAY);
-	GaussianBlur(treated, treated, Size(BLUR_BLOCK_SIZE, BLUR_BLOCK_SIZE), 0);
-	equalizeHist(treated, treated);
-	
+	cvtColor(frame, frame, CV_BGR2GRAY);
+	GaussianBlur(frame, treated, Size(BLUR_BLOCK_SIZE, BLUR_BLOCK_SIZE), 3);
 	///cautions
 	threshold(treated, treated, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
-	
+	Mat kernel = getStructuringElement(MOPRPH_ELLIPSE, Size(3, 3));
+	morphologyEx(treated, treated, MOPRH_GRADIENT, kernel);	
 	return treated;		
 }
 
